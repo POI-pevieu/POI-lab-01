@@ -53,7 +53,7 @@ EXTRAS = {
 
 
 def ordem_cenario(nome: str):
-    """1cpu-1gb < 1cpu-2gb < 2cpu-2gb < 4cpu-4gb; nomes fora do padrão vão para o fim."""
+    """1cpu-1gb < 1cpu-2gb < 2cpu-2gb < 3cpu-3gb; nomes fora do padrão vão para o fim."""
     m = re.fullmatch(r"(\d+)cpu-(\d+(?:\.\d+)?)gb", nome)
     return (0, int(m[1]), float(m[2]), "") if m else (1, 0, 0.0, nome)
 

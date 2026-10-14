@@ -26,7 +26,7 @@ Fora do escopo: mudar as apps (código, camadas, testes e gargalo de cada uma co
 | Aluno (à mão) | Criar a VM a partir do VDI, configurar o redirecionamento de portas, setup inicial dentro da VM (clonar repo, venvs, `node_exporter`, chave SSH) | 1× |
 | Aluno (à mão) | `docker compose up -d` em `monitoring/` | 1× por sessão |
 | Aluno (à mão) | Desligar a VM, ajustar vCPU/RAM, ligar, rodar `run_scenario.sh <cenario>` | 4× |
-| `run_scenario.sh` | Para cada app: sobe na VM via SSH, roda os 5 níveis no k6, exporta as métricas, para a app | automático, ~40 min por cenário |
+| `run_scenario.sh` | Para cada app: sobe na VM via SSH, roda os 5 níveis no k6, exporta as métricas, para a app | automático, ~21 min por cenário |
 | Aluno | `analyze.py` + commit dos resultados | 1× no fim |
 
 ## Arquitetura
@@ -56,8 +56,8 @@ Prometheus e Grafana rodam em Docker com `network_mode: host`, porque o NAT do V
 
 ### `loadtest/k6/<app>.js` (adaptar)
 - Passam a ser a ferramenta principal. Tirar o comentário "Secondary… Primary tool is Locust".
-- **Defaults iguais aos valores que hoje estão nos YAML.** Galeria: `GALERIA_RES_MIN=1000`, `GALERIA_RES_MAX=3000`, `GALERIA_ID_SPACE=48`, pesos 3/6/1/1. Bolsa: pesos 10/2/2/3/3/2, saldo 10000. Todos: espera de 0,5–1,5 s.
-- `stages`: 10 s de ramp-up até `VUS`, depois 2 min constantes.
+- **Defaults iguais aos valores que hoje estão nos YAML.** Galeria: `GALERIA_RES_MIN=1000`, `GALERIA_RES_MAX=3000`, `GALERIA_ID_SPACE=128` (era 48; subiu para o conjunto de imagens não caber no cache nem com 3 GB), pesos 3/6/1/1. Bolsa: pesos 10/2/2/3/3/2, saldo 10000. Todos: espera de 0,5–1,5 s.
+- `stages`: 10 s de ramp-up até `VUS`, depois 1 min constante.
 - `handleSummary` grava o resumo do k6 + `inicio_epoch`/`fim_epoch` em `results/<app>/<cenario>/<nivel>.k6.json`, a partir de `-e CENARIO=… -e NIVEL=…`, e mantém o resumo de texto no terminal.
 
 ### `loadtest/run_scenario.sh <cenario> [app ...]` (novo, bash)
@@ -95,13 +95,13 @@ Prometheus e Grafana rodam em Docker com `network_mode: host`, porque o NAT do V
 
 | App | Porta | Variáveis do servidor | Antes de cada nível | Níveis (usuários) |
 |---|---|---|---|---|
-| cofre_digital | 8001 | `WORKERS=auto` | — | 1, 4, 8, 16, 32 |
-| galeria_filtros | 8002 | `WORKERS=1 CACHE_MAX_MB=auto CACHE_RAM_FRACTION=0.4 MOSAICO_MAX_MB=256 MALLOC_ARENA_MAX=2` | `DELETE /cache` | 2, 5, 10, 20, 40 |
-| bolsa_ficticia | 8003 | `WORKERS=4 SQLITE_JOURNAL_MODE=WAL SQLITE_SYNCHRONOUS=FULL SQLITE_BUSY_TIMEOUT_MS=30000 LEDGER_FSYNC=1` | `POST /admin/reset` | 5, 20, 50, 100, 200 |
+| cofre_digital | 8001 | `WORKERS=auto` | — | 4, 8, 16, 48, 128 |
+| galeria_filtros | 8002 | `WORKERS=1 CACHE_MAX_MB=auto CACHE_RAM_FRACTION=0.4 MOSAICO_MAX_MB=256 MALLOC_ARENA_MAX=2` | `DELETE /cache` | 10, 20, 40, 100, 300 |
+| bolsa_ficticia | 8003 | `WORKERS=4 SQLITE_JOURNAL_MODE=WAL SQLITE_SYNCHRONOUS=FULL SQLITE_BUSY_TIMEOUT_MS=30000 LEDGER_FSYNC=1` | `POST /admin/reset` | 25, 50, 100, 200, 500 |
 
 - Nomes dos níveis: cofre e galeria usam `minima, baixa, media, alta, extrema`. Bolsa usa `baixa, media, alta, muito_alta, extrema`.
-- Cenários de provisionamento (um recurso muda por vez): `1cpu-1gb`, `1cpu-2gb`, `2cpu-2gb`, `4cpu-4gb`.
-- **1 repetição por nível** (decisão do grupo, por tempo): ~40 min por cenário, ~2 h 40 min no total. A limitação vai declarada no relatório.
+- Cenários de provisionamento (um recurso muda por vez): `1cpu-1gb`, `1cpu-2gb`, `2cpu-2gb`, `3cpu-3gb`.
+- **1 repetição por nível** (decisão do grupo, por tempo): ~21 min por cenário, ~1 h 25 min no total (1 min por nível e 15 s de pausa; antes eram 2 min e 30 s, reduzido por tempo). A limitação vai declarada no relatório.
 
 ## Estrutura dos resultados (versionada)
 

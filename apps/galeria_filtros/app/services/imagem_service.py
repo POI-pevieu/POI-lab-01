@@ -17,6 +17,7 @@ from ..repositories.imagem_cache_repository import ImagemCacheRepository
 
 RES_MIN = 500
 RES_MAX = 4000
+BLOCO_RUIDO = 512
 
 
 def semente(id_imagem: str) -> int:
@@ -38,7 +39,14 @@ def gerar_imagem(id_imagem: str, resolucao: int) -> np.ndarray:
     img[..., 0] = eixo[None, :]
     img[..., 1] = eixo[:, None]
     img[..., 2] = (eixo[None, :] // 2) + (eixo[:, None] // 2) + np.uint8(s % 256)
-    img += rng.integers(0, 48, size=img.shape, dtype=np.uint8)
+    # o ruido e sorteado so num bloco de BLOCO_RUIDO x BLOCO_RUIDO e repetido pela
+    # imagem: sortear um valor por pixel custava ~3/4 do tempo de gerar a imagem
+    lado = min(BLOCO_RUIDO, resolucao)
+    bloco = rng.integers(0, 48, size=(lado, lado, 3), dtype=np.uint8)
+    for y in range(0, resolucao, lado):
+        for x in range(0, resolucao, lado):
+            janela = img[y:y + lado, x:x + lado]
+            janela += bloco[:janela.shape[0], :janela.shape[1]]
     return img
 
 

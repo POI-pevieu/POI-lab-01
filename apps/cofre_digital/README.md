@@ -76,4 +76,4 @@ iterated hashes recomputed with `hashlib`, matrix results recomputed independent
 ## Load test
 k6 script: `loadtest/k6/cofre_digital.js`. The knobs are documented at the top of the file: `COFRE_N_MIN/MAX`,
 `COFRE_ROUNDS_MIN/MAX`, `COFRE_MATRIZ_MIN/MAX`. In the experiment, `loadtest/run_scenario.sh` starts
-the app with `WORKERS=auto` (one worker per vCPU) and runs 1, 4, 8, 16 and 32 users.
+the app with `WORKERS=auto` (one worker per vCPU) and runs 4, 8, 16, 48 and 128 users.

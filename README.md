@@ -75,7 +75,7 @@ sequenceDiagram
         RS->>VM: ssh: sobe a app
         loop 5 níveis de demanda
             RS->>VM: reset (galeria/bolsa)
-            RS->>K6: 10 s de rampa + 2 min com N usuários
+            RS->>K6: 10 s de rampa + 1 min com N usuários
             K6-->>RS: <nivel>.k6.json
             RS->>VM: salva estatísticas da app
         end
@@ -84,14 +84,14 @@ sequenceDiagram
     end
 ```
 
-Cada cenário leva **~40 min** sozinho. Os quatro cenários de provisionamento mudam **um recurso por vez**:
+Cada cenário leva **~21 min** sozinho (~1h25 os quatro). Os quatro cenários de provisionamento mudam **um recurso por vez**:
 
 | Cenário | vCPU | RAM | Compara com o anterior |
 |---|---:|---:|---|
 | `1cpu-1gb` | 1 | 1 GB | ponto de partida |
 | `1cpu-2gb` | 1 | 2 GB | só a RAM, que interessa para a galeria |
 | `2cpu-2gb` | 2 | 2 GB | só a CPU, que interessa para o cofre |
-| `4cpu-4gb` | 4 | 4 GB | cenário folgado |
+| `3cpu-3gb` | 3 | 3 GB | cenário folgado |
 
 | App | Níveis de demanda (usuários simultâneos) |
 |---|---|

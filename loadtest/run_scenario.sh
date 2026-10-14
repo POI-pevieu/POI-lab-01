@@ -3,7 +3,7 @@
 #   sobe a app na VM (ssh) -> 5 níveis de carga com o k6 -> para a app -> exporta CPU/RAM/disco do Prometheus
 #
 # Uso:  loadtest/run_scenario.sh <cenario> [app ...]
-# Ex.:  loadtest/run_scenario.sh 2cpu-2gb                  as 3 apps (~40 min)
+# Ex.:  loadtest/run_scenario.sh 2cpu-2gb                  as 3 apps (~21 min)
 #       loadtest/run_scenario.sh 2cpu-2gb bolsa_ficticia   só uma
 #
 # Antes: VM ligada com a configuração do cenário e `docker compose up -d` em monitoring/.
@@ -14,19 +14,20 @@
 #   VM_SSH    comando para entrar na VM (padrão: ssh -p 2222 osboxes@127.0.0.1; vazio = roda tudo local)
 #   VM_REPO   onde o repositório está na VM (padrão: ~/POI-lab-01)
 #   VM_IP     endereço pelo qual o host acessa as apps (padrão: 127.0.0.1, via NAT)
-#   DURACAO   tempo no patamar de cada nível (padrão: 2m)
+#   DURACAO   tempo no patamar de cada nível (padrão: 1m)
 #   RAMPA     tempo de subida até o número de usuários (padrão: 10s)
-#   PAUSA     segundos de descanso entre níveis (padrão: 30)
+#   PAUSA     segundos de descanso entre níveis (padrão: 15)
 #   PROM_URL  endereço do Prometheus (padrão: http://127.0.0.1:9090)
+#   NIVEIS_TESTE  troca os níveis da app, só para calibrar (ex.: "a:64 b:128"; use com uma app só)
 set -euo pipefail
 
 RAIZ="$(cd "$(dirname "$0")/.." && pwd)"
 VM_SSH="${VM_SSH-ssh -p 2222 -o BatchMode=yes osboxes@127.0.0.1}"
 VM_REPO="${VM_REPO:-~/POI-lab-01}"
 VM_IP="${VM_IP:-127.0.0.1}"
-DURACAO="${DURACAO:-2m}"
+DURACAO="${DURACAO:-1m}"
 RAMPA="${RAMPA:-10s}"
-PAUSA="${PAUSA:-30}"
+PAUSA="${PAUSA:-15}"
 export PROM_URL="${PROM_URL:-http://127.0.0.1:9090}"
 
 CENARIO="${1:?uso: $0 <cenario> [app ...]   ex.: $0 2cpu-2gb}"
@@ -42,23 +43,24 @@ configurar() {
       AMBIENTE="WORKERS=auto"   # um worker por vCPU: o GIL limita cada worker a ~1 núcleo
       RESET=""
       STATS=""
-      NIVEIS="minima:1 baixa:4 media:8 alta:16 extrema:32" ;;
+      NIVEIS="minima:4 baixa:8 media:16 alta:48 extrema:128" ;;
     galeria_filtros)
       PORTA=8002
       AMBIENTE="WORKERS=1 CACHE_MAX_MB=auto CACHE_RAM_FRACTION=0.4 MOSAICO_MAX_MB=256 MALLOC_ARENA_MAX=2"
       RESET="DELETE /cache"     # cada nível começa com o cache vazio
       STATS="/cache/stats"      # hits, misses, despejos
-      NIVEIS="minima:2 baixa:5 media:10 alta:20 extrema:40" ;;
+      NIVEIS="minima:10 baixa:20 media:40 alta:100 extrema:300" ;;
     bolsa_ficticia)
       PORTA=8003
       AMBIENTE="WORKERS=4 SQLITE_JOURNAL_MODE=WAL SQLITE_SYNCHRONOUS=FULL SQLITE_BUSY_TIMEOUT_MS=30000 LEDGER_FSYNC=1"
       RESET="POST /admin/reset" # zera banco e livro-caixa
       STATS="/livro-caixa/stats" # tempo de fsync, tamanho do banco
-      NIVEIS="baixa:5 media:20 alta:50 muito_alta:100 extrema:200" ;;
+      NIVEIS="baixa:25 media:50 alta:100 muito_alta:200 extrema:500" ;;
     *)
       echo "app desconhecida: $1 (use cofre_digital, galeria_filtros ou bolsa_ficticia)" >&2
       exit 1 ;;
   esac
+  NIVEIS="${NIVEIS_TESTE:-$NIVEIS}"
   URL="http://$VM_IP:$PORTA"
 }
 

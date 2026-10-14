@@ -114,7 +114,8 @@ def test_cinza(cliente):
     f = j["filtrada"]
     assert f["shape"] == [res, res]
     assert f["bytes"] == res * res
-    assert f["media"] == pytest.approx(lum.mean(), abs=0.01)
+    # o app usa pesos inteiros /256, que se afastam um pouco dos pesos em float
+    assert f["media"] == pytest.approx(lum.mean(), abs=0.05)
     assert f["checksum_crc32"] == zlib.crc32(filtro_cinza(gerar_imagem("gray", res)).tobytes())
 
 

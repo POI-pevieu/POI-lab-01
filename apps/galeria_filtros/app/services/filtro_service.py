@@ -15,8 +15,9 @@ from .imagem_service import resumo
 FILTROS = ("negativo", "cinza")
 FORMATOS = ("resumo", "png")
 
-# pesos de luminancia ITU-R BT.601
-_PESOS_CINZA = (np.float32(0.299), np.float32(0.587), np.float32(0.114))
+# pesos de luminancia ITU-R BT.601 (0.299, 0.587, 0.114) em ponto fixo /256:
+# conta em uint16 e custa metade da versao float32
+_PESOS_CINZA = (np.uint16(77), np.uint16(150), np.uint16(29))
 
 
 def filtro_negativo(img: np.ndarray) -> np.ndarray:
@@ -25,11 +26,11 @@ def filtro_negativo(img: np.ndarray) -> np.ndarray:
 
 def filtro_cinza(img: np.ndarray) -> np.ndarray:
     r, g, b = _PESOS_CINZA
-    lum = img[..., 0] * r
+    lum = img[..., 0] * r  # uint16: no maximo 255 * 256, nao estoura
     lum += img[..., 1] * g
     lum += img[..., 2] * b
-    np.rint(lum, out=lum)
-    np.clip(lum, 0, 255, out=lum)
+    lum += np.uint16(128)  # arredonda
+    lum >>= 8
     return lum.astype(np.uint8)
 
 

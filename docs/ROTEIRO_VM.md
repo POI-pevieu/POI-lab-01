@@ -56,6 +56,8 @@ No notebook, `curl localhost:8001/health` deve responder.
 
 ## 3. Preparar o notebook (uma vez)
 
+Rode os comandos abaixo **na raiz do repositório, no notebook**.
+
 ```bash
 # chave SSH para o script entrar na VM sem pedir senha
 ssh-keygen -t ed25519                         # só se você ainda não tiver uma chave
@@ -86,7 +88,7 @@ cd monitoring && docker compose up -d
 | `1cpu-1gb` | 1 | 1024 MB | ponto de partida |
 | `1cpu-2gb` | 1 | 2048 MB | só a RAM, o que interessa para a galeria |
 | `2cpu-2gb` | 2 | 2048 MB | só a CPU, o que interessa para o cofre |
-| `4cpu-4gb` | 4 | 4096 MB | cenário folgado, para comparação |
+| `3cpu-3gb` | 3 | 3072 MB | cenário folgado, para comparação |
 
 1. Desligue a VM (`sudo poweroff` dentro dela).
 2. No VirtualBox, em **Configurações → Sistema**, ajuste **Memória base** (aba Placa-mãe) e **Processadores** (aba Processador).
@@ -97,7 +99,7 @@ cd monitoring && docker compose up -d
    loadtest/run_scenario.sh 1cpu-1gb
    ```
 
-O script confere se a VM tem mesmo os vCPUs e a RAM do nome do cenário. Se você esquecer de mudar a configuração, ele para antes de começar. Depois roda as 3 apps, cada uma em 5 níveis de demanda (2 min cada + 10 s de rampa + 30 s de pausa), em ~40 min. Durante esse tempo:
+O script confere se a VM tem mesmo os vCPUs e a RAM do nome do cenário. Se você esquecer de mudar a configuração, ele para antes de começar. Depois roda as 3 apps, cada uma em 5 níveis de demanda (1 min cada + 10 s de rampa + 15 s de pausa), em ~21 min. Os quatro cenários somam ~1h25. Durante esse tempo:
 
 - não use o notebook para nada pesado (navegador com vídeo, compilação, downloads);
 - deixe o notebook na tomada, porque na bateria a CPU fica mais lenta;

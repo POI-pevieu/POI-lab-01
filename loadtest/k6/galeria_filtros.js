@@ -10,7 +10,7 @@ import { opcoes, resumo } from './comum.js';
 const E = (k, d) => (__ENV[k] !== undefined ? Number(__ENV[k]) : d);
 const BASE = __ENV.BASE_URL || 'http://127.0.0.1:8002';
 const RES = [E('GALERIA_RES_MIN', 1000), E('GALERIA_RES_MAX', 3000)];
-const IDS = E('GALERIA_ID_SPACE', 48);
+const IDS = E('GALERIA_ID_SPACE', 128);
 const K = E('GALERIA_MOSAICO_K', 4);
 const WT = [E('GALERIA_W_CRIAR', 3), E('GALERIA_W_FILTRO', 6), E('GALERIA_W_MOSAICO', 1), E('GALERIA_W_STATS', 1)];
 const W = [E('LT_WAIT_MIN', 0.5), E('LT_WAIT_MAX', 1.5)];
