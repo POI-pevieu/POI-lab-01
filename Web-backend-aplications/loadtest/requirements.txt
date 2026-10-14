@@ -1,0 +1,5 @@
+# Load-test harness (host = load generator; VM = vm_agent.py + monitor.py)
+locust>=2.20
+psutil>=5.9
+PyYAML>=6.0
+requests>=2.31

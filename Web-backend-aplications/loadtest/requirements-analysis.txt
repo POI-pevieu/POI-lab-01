@@ -1,0 +1,3 @@
+# Offline analysis on the HOST (loadtest/analyze.py); not needed on the VM
+pandas>=2.0
+matplotlib>=3.7

@@ -1,0 +1,27 @@
+# Bolsa Ficticia (IO-bound) - systemd unit template.
+# Installed by: scripts/setup_vm.sh --install-systemd  (replaces __REPO__ / __USER__)
+# Change WORKERS (or add other env, e.g. CACHE_MAX_MB) then:
+#   sudo systemctl daemon-reload && sudo systemctl restart bolsa_ficticia
+# Do NOT run this unit at the same time as run_experiment.py --start-server (same port).
+[Unit]
+Description=Bolsa Ficticia (IO-bound) on port 8003
+After=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__REPO__/apps/bolsa_ficticia
+Environment=HOST=0.0.0.0
+Environment=PORT=8003
+Environment=WORKERS=4
+Environment=TIMEOUT=120
+Environment=LOG_LEVEL=warning
+Environment=VIRTUAL_ENV=__REPO__/apps/bolsa_ficticia/.venv
+Environment=PATH=__REPO__/apps/bolsa_ficticia/.venv/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/bin/bash __REPO__/apps/bolsa_ficticia/run.sh
+KillMode=mixed
+TimeoutStopSec=40
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

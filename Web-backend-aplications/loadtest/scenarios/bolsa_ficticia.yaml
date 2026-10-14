@@ -1,0 +1,39 @@
+# Bolsa Fictícia -- IO-bound. Cada ordem executada = transação SQLite (BEGIN
+# IMMEDIATE, synchronous=FULL) + linha no livro-caixa com fsync, tudo sob o
+# lock de escrita do banco. Escritas são serializadas => o gargalo é a
+# latência de fsync do disco virtual da VM, não a CPU.
+# O orquestrador deve chamar POST <reset_endpoint> antes de cada repetição
+# (zera banco + livro-caixa para que o tamanho dos arquivos não cresça entre reps).
+app: bolsa_ficticia
+port: 8003
+locustfile: loadtest/locustfiles/bolsa_ficticia.py
+workers: 4
+reset_endpoint: /admin/reset
+warmup_s: 15
+duration_s: 120
+cooldown_s: 15
+repetitions: 3
+spawn_rate: 10
+# variáveis do SERVIDOR (usadas com --start-server; senão exporte antes de ./run.sh)
+server_env:
+  SQLITE_JOURNAL_MODE: "WAL"     # DELETE para comparação (rollback journal)
+  SQLITE_SYNCHRONOUS: "FULL"
+  SQLITE_BUSY_TIMEOUT_MS: "30000"
+  LEDGER_FSYNC: "1"              # 0 só em experimento de comparação (sem durabilidade)
+  # DATA_DIR: "/var/lib/bolsa"   # opcional: banco + livro-caixa no disco virtual escolhido
+env:  # passadas ao locust
+  LT_WAIT_MIN: "0.5"
+  LT_WAIT_MAX: "1.5"
+  BOLSA_SALDO: "10000"
+  BOLSA_OPERAR_WEIGHT: "10"
+  BOLSA_ORDEM_WEIGHT: "2"
+  BOLSA_TICK_WEIGHT: "2"
+  BOLSA_CARTEIRA_WEIGHT: "3"
+  BOLSA_ACOES_WEIGHT: "3"
+  BOLSA_ORDENS_WEIGHT: "2"
+levels:
+  - {name: baixa,    users: 5}
+  - {name: media,    users: 20}
+  - {name: alta,     users: 50}
+  - {name: muito_alta, users: 100}
+  - {name: extrema,  users: 200}

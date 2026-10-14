@@ -1,0 +1,47 @@
+# Galeria de Filtros -- memory-bound. O knob principal e a interacao entre a RAM
+# da VM (cenario de provisionamento) e a capacidade do cache no SERVIDOR:
+#   - CACHE_MAX_MB=auto  => capacidade = CACHE_RAM_FRACTION * RAM total / WORKERS
+#     (escala automaticamente com o cenario de RAM da VM; recomendado)
+#   - CACHE_MAX_MB=<n>   => capacidade fixa em MiB (mesma em todos os cenarios)
+# Com GALERIA_ID_SPACE=48 e resolucoes 1000..3000 px (media ~13 MB/imagem) o
+# conjunto de trabalho e ~650 MB: cabe no cache em VMs grandes (muitos hits) e
+# provoca despejos/misses e pressao de memoria em VMs pequenas.
+# Filtros e mosaicos alocam copias transitorias (ate ~2x a imagem / MOSAICO_MAX_MB),
+# entao deixe folga: CACHE_RAM_FRACTION <= 0.5.
+# WORKERS=1: cada worker teria seu proprio cache (memoria nao compartilhada).
+app: galeria_filtros
+port: 8002
+locustfile: loadtest/locustfiles/galeria_filtros.py
+workers: 1
+# esvazia o cache (gc + malloc_trim) antes de cada repeticao, para nao herdar estado
+reset_endpoint: /cache
+reset_method: DELETE
+warmup_s: 15
+duration_s: 120
+cooldown_s: 15
+repetitions: 3
+spawn_rate: 2
+# variaveis do SERVIDOR (usadas quando o orquestrador inicia o app com --start-server;
+# caso contrario, exporte-as antes de ./run.sh / no unit systemd)
+server_env:
+  CACHE_MAX_MB: "auto"
+  CACHE_RAM_FRACTION: "0.4"
+  MOSAICO_MAX_MB: "256"
+  MALLOC_ARENA_MAX: "2"
+env:  # passadas ao locust
+  LT_WAIT_MIN: "0.5"
+  LT_WAIT_MAX: "1.5"
+  GALERIA_RES_MIN: "1000"
+  GALERIA_RES_MAX: "3000"
+  GALERIA_ID_SPACE: "48"
+  GALERIA_MOSAICO_K: "4"
+  GALERIA_W_CRIAR: "3"
+  GALERIA_W_FILTRO: "6"
+  GALERIA_W_MOSAICO: "1"
+  GALERIA_W_STATS: "1"
+levels:
+  - {name: minima,  users: 2}
+  - {name: baixa,   users: 5}
+  - {name: media,   users: 10}
+  - {name: alta,    users: 20}
+  - {name: extrema, users: 40}

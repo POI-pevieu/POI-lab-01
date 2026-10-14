@@ -1,0 +1,30 @@
+# Cofre Digital -- CPU-bound. Each Gunicorn worker can use ~1 core (GIL), so the
+# service saturates at low concurrency; levels are spaced to show the knee.
+app: cofre_digital
+port: 8001
+locustfile: loadtest/locustfiles/cofre_digital.py
+# auto = one gunicorn worker per vCPU, so adding vCPUs to the VM can actually be
+# used (a single worker is limited to ~1 core by the GIL). Override with --workers N.
+workers: auto
+warmup_s: 15
+duration_s: 120
+cooldown_s: 15
+repetitions: 3
+spawn_rate: 4
+env:
+  LT_WAIT_MIN: "0.5"
+  LT_WAIT_MAX: "1.5"
+  COFRE_N_MIN: "50000"
+  COFRE_N_MAX: "500000"
+  COFRE_ROUNDS_MIN: "50000"
+  COFRE_ROUNDS_MAX: "500000"
+  COFRE_MATRIZ_MIN: "60"
+  COFRE_MATRIZ_MAX: "160"
+  COFRE_PESOS: "3,3,2"
+  COFRE_FIXED: "0"
+levels:
+  - {name: minima,  users: 1}
+  - {name: baixa,   users: 4}
+  - {name: media,   users: 8}
+  - {name: alta,    users: 16}
+  - {name: extrema, users: 32}

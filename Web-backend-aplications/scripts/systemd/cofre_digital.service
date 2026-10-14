@@ -1,0 +1,27 @@
+# Cofre Digital (CPU-bound) - systemd unit template.
+# Installed by: scripts/setup_vm.sh --install-systemd  (replaces __REPO__ / __USER__)
+# Change WORKERS (or add other env, e.g. CACHE_MAX_MB) then:
+#   sudo systemctl daemon-reload && sudo systemctl restart cofre_digital
+# Do NOT run this unit at the same time as run_experiment.py --start-server (same port).
+[Unit]
+Description=Cofre Digital (CPU-bound) on port 8001
+After=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__REPO__/apps/cofre_digital
+Environment=HOST=0.0.0.0
+Environment=PORT=8001
+Environment=WORKERS=2
+Environment=TIMEOUT=120
+Environment=LOG_LEVEL=warning
+Environment=VIRTUAL_ENV=__REPO__/apps/cofre_digital/.venv
+Environment=PATH=__REPO__/apps/cofre_digital/.venv/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/bin/bash __REPO__/apps/cofre_digital/run.sh
+KillMode=mixed
+TimeoutStopSec=40
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
