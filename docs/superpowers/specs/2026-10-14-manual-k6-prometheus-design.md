@@ -96,7 +96,7 @@ Prometheus e Grafana rodam em Docker com `network_mode: host`, porque o NAT do V
 | App | Porta | Variáveis do servidor | Antes de cada nível | Níveis (usuários) |
 |---|---|---|---|---|
 | cofre_digital | 8001 | `WORKERS=auto` | — | 4, 8, 16, 48, 128 |
-| galeria_filtros | 8002 | `WORKERS=1 CACHE_MAX_MB=auto CACHE_RAM_FRACTION=0.4 MOSAICO_MAX_MB=256 MALLOC_ARENA_MAX=2` | `DELETE /cache` | 10, 20, 40, 100, 300 |
+| galeria_filtros | 8002 | `WORKERS=1 CACHE_MAX_MB=auto CACHE_RAM_FRACTION=0.4 MOSAICO_MAX_MB=256 MALLOC_ARENA_MAX=2` | `DELETE /cache` | 10, 20, 40, 120, 400 |
 | bolsa_ficticia | 8003 | `WORKERS=4 SQLITE_JOURNAL_MODE=WAL SQLITE_SYNCHRONOUS=FULL SQLITE_BUSY_TIMEOUT_MS=30000 LEDGER_FSYNC=1` | `POST /admin/reset` | 25, 50, 100, 200, 500 |
 
 - Nomes dos níveis: cofre e galeria usam `minima, baixa, media, alta, extrema`. Bolsa usa `baixa, media, alta, muito_alta, extrema`.

@@ -49,7 +49,7 @@ configurar() {
       AMBIENTE="WORKERS=1 CACHE_MAX_MB=auto CACHE_RAM_FRACTION=0.4 MOSAICO_MAX_MB=256 MALLOC_ARENA_MAX=2"
       RESET="DELETE /cache"     # cada nível começa com o cache vazio
       STATS="/cache/stats"      # hits, misses, despejos
-      NIVEIS="minima:10 baixa:20 media:40 alta:100 extrema:300" ;;
+      NIVEIS="minima:10 baixa:20 media:40 alta:120 extrema:400" ;;
     bolsa_ficticia)
       PORTA=8003
       AMBIENTE="WORKERS=4 SQLITE_JOURNAL_MODE=WAL SQLITE_SYNCHRONOUS=FULL SQLITE_BUSY_TIMEOUT_MS=30000 LEDGER_FSYNC=1"
