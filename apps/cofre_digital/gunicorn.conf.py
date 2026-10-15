@@ -1,6 +1,6 @@
 """Gunicorn configuration for Cofre Digital (CPU-bound, default port 8001).
 
-Env vars (see CONTRACT.md): HOST, PORT, WORKERS, TIMEOUT, LOG_LEVEL.
+Env vars: HOST, PORT, WORKERS, TIMEOUT, LOG_LEVEL.
 Access logs are disabled unless LOG_LEVEL is debug/info, to keep logging
 overhead out of load-test measurements.
 """

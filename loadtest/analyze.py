@@ -59,7 +59,8 @@ def ordem_cenario(nome: str):
 
 
 def stats_da_app(arquivo: Path) -> dict:
-    if not arquivo.exists():
+    # vazio quando a app não respondeu ao /stats no fim do nível (ex.: galeria em swap pesado)
+    if not arquivo.exists() or not arquivo.read_text().strip():
         return {}
     d = json.loads(arquivo.read_text())
     if "hit_ratio" in d:  # galeria: /cache/stats

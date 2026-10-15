@@ -119,7 +119,7 @@ for APP in "${APPS[@]}"; do
   total_niveis=$((total_niveis + $(wc -w <<<"$NIVEIS")))
 done
 if [[ -n "$VM_SSH" ]] && ! $VM_SSH true; then
-  echo "Não consegui entrar na VM com: $VM_SSH (a chave SSH foi copiada? ver docs/ROTEIRO_VM.md)" >&2
+  echo "Não consegui entrar na VM com: $VM_SSH (a chave SSH foi copiada?)" >&2
   exit 1
 fi
 python3 "$RAIZ/loadtest/metricas_vm.py" checar "$CENARIO"

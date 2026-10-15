@@ -1,4 +1,4 @@
-"""Configuracao do gunicorn — le HOST/PORT/WORKERS/TIMEOUT/LOG_LEVEL do ambiente (ver CONTRACT.md)."""
+"""Configuracao do gunicorn — le HOST/PORT/WORKERS/TIMEOUT/LOG_LEVEL do ambiente."""
 import os
 
 bind = f"{os.environ.get('HOST', '0.0.0.0')}:{os.environ.get('PORT', '8002')}"

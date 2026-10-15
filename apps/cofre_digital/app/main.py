@@ -1,6 +1,6 @@
 """Cofre Digital -- CPU-bound FastAPI application (port 8001).
 
-Service–Controller layout (see CONTRACT.md):
+Service–Controller layout:
 
 * ``controllers/`` -- APIRouters, HTTP only (validation, 422 mapping).
 * ``services/``    -- pure-Python, GIL-bound algorithms (no FastAPI imports):

@@ -26,7 +26,7 @@ do not add parallelism — one worker ≈ at most one core; parallelism comes fr
 numpy was avoided because it releases the GIL and uses multithreaded BLAS, which would
 blur the CPU profile.
 
-## Estrutura (padrão Service–Controller, ver CONTRACT.md)
+## Estrutura (padrão Service–Controller)
 ```
 app/
   main.py                  # cria o FastAPI, middleware, include_router — expõe `app` (app.main:app)
