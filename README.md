@@ -73,13 +73,14 @@ sequenceDiagram
     end
 ```
 
-Cada cenário leva cerca de 21 minutos, e os quatro juntos, 1h25. Escolhemos os cenários para que dê para isolar um recurso de cada vez:
+Cada cenário leva cerca de 21 minutos, e os cinco juntos, perto de 1h45. Escolhemos os cenários para que dê para isolar um recurso de cada vez:
 
 | Cenário | vCPU | RAM | Para que serve |
 |---|---:|---:|---|
-| `1cpu-2gb` | 1 | 2 GB | comparado com `2cpu-2gb`, mostra o efeito de mudar só a CPU |
-| `2cpu-1gb` | 2 | 1 GB | comparado com `2cpu-2gb`, mostra o efeito de mudar só a RAM |
-| `2cpu-2gb` | 2 | 2 GB | referência para as duas comparações acima |
+| `1cpu-1gb` | 1 | 1 GB | ponto de partida, o cenário mais apertado |
+| `1cpu-2gb` | 1 | 2 GB | comparado com `1cpu-1gb`, mostra o efeito de dobrar só a RAM |
+| `2cpu-1gb` | 2 | 1 GB | comparado com `1cpu-1gb`, mostra o efeito de dobrar só a CPU |
+| `2cpu-2gb` | 2 | 2 GB | dobra os dois recursos |
 | `3cpu-3gb` | 3 | 3 GB | o cenário com mais recurso |
 
 Os níveis de demanda são os mesmos em todos os cenários, para que os gráficos possam ser comparados. Eles foram calibrados no `3cpu-3gb`, de forma que até o cenário mais forte piore no último nível:
@@ -96,48 +97,48 @@ Os números abaixo vêm de `results/_analysis/resumo.csv`. Rodamos uma vez cada 
 
 ### Cofre Digital (CPU)
 
-| | 1cpu-2gb | 2cpu-1gb | 2cpu-2gb | 3cpu-3gb |
-|---|---:|---:|---:|---:|
-| vazão máxima (req/s) | 8,0 | 13,8 | 13,5 | 19,0 |
-| p95 com 128 usuários | 23,3 s | 13,5 s | 13,8 s | 10,4 s |
+| | 1cpu-1gb | 1cpu-2gb | 2cpu-1gb | 2cpu-2gb | 3cpu-3gb |
+|---|---:|---:|---:|---:|---:|
+| vazão máxima (req/s) | 7,7 | 8,0 | 13,8 | 13,5 | 19,0 |
+| p95 com 128 usuários | 23,0 s | 23,3 s | 13,5 s | 13,8 s | 10,4 s |
 
-A vazão cresce quase na mesma proporção das vCPUs. Já `2cpu-1gb` e `2cpu-2gb` dão praticamente o mesmo resultado, então RAM a mais não muda nada aqui. Com 1 vCPU, a CPU chega a 100% com apenas 16 usuários. Com 3 vCPUs, isso só acontece com 48. A partir daí, cada usuário a mais só aumenta a fila: com 128 usuários a vazão fica parada e a latência explode.
+A vazão cresce quase na mesma proporção das vCPUs: perto de 8 req/s com 1 vCPU, 13,5 com 2 e 19 com 3. Dobrar a RAM não muda nada. `1cpu-1gb` e `1cpu-2gb` dão o mesmo resultado, e o mesmo vale para `2cpu-1gb` e `2cpu-2gb`. Com 1 vCPU, a CPU chega a 100% com apenas 16 usuários. Com 3 vCPUs, isso só acontece com 48. A partir daí, cada usuário a mais só aumenta a fila: com 128 usuários a vazão fica parada e a latência explode.
 
 ![cofre_digital](results/_analysis/cofre_digital/visao_geral.png)
 
 ### Galeria de Filtros (memória)
 
-| | 1cpu-2gb | 2cpu-1gb | 2cpu-2gb | 3cpu-3gb |
-|---|---:|---:|---:|---:|
-| vazão máxima (req/s) | 74 | 36 | 110 | 134 |
-| vazão com 400 usuários | 60 | 12 | 110 | 134 |
-| swap máximo | 420 MB | 1,7 GB | 310 MB | 0 |
-| falhas com 400 usuários | 0% | 23% | 0% | 0% |
+| | 1cpu-1gb | 1cpu-2gb | 2cpu-1gb | 2cpu-2gb | 3cpu-3gb |
+|---|---:|---:|---:|---:|---:|
+| vazão máxima (req/s) | 36 | 74 | 36 | 110 | 134 |
+| vazão com 400 usuários | 20 | 60 | 12 | 110 | 134 |
+| swap máximo | 1,5 GB | 420 MB | 1,7 GB | 310 MB | 0 |
+| falhas com 400 usuários | 0,3% | 0% | 23% | 0% | 0% |
 
-É aqui que o efeito da RAM aparece mais claramente. Com 1 GB, mesmo tendo 2 vCPUs, o swap já passa de 240 MB com 40 usuários e a vazão cai pela metade com 120. Com 400 usuários, quase um quarto das requisições estoura o timeout de 60 s do k6, e a app ficou tão travada que nem respondeu ao pedido de estatísticas no fim do nível. Com a mesma CPU e 2 GB (`2cpu-2gb`), a vazão vai até 110 req/s e não há falhas.
+É aqui que o efeito da RAM aparece mais claramente. Os dois cenários com 1 GB se comportam quase igual: até 40 usuários vai tudo bem, e com 120 a VM entra em swap pesado (1,5 a 1,7 GB), o disco fica mais de 90% ocupado e a vazão despenca para menos da metade. Ter 2 vCPUs em vez de 1 não salva o `2cpu-1gb`. Com 400 usuários, quase um quarto das requisições dele estoura o timeout de 60 s do k6, e a app ficou tão travada que nem respondeu ao pedido de estatísticas no fim do nível.
 
-Com 1 vCPU e 2 GB, o limite passa a ser a CPU, que fica em 100% a partir de 120 usuários. Com 3 GB o swap fica zerado, o cache acerta mais (cerca de 72% contra 48%) e o que segura a vazão no topo também é a CPU. Ou seja, quando a memória deixa de faltar, o gargalo muda de lugar.
+Já dobrar a RAM com 1 vCPU (`1cpu-2gb`) dobra a vazão máxima, de 36 para 74 req/s. Nesse cenário o limite passa a ser a CPU, que fica em 100% a partir de 120 usuários. Com 3 GB o swap fica zerado, o cache acerta mais (cerca de 72%, contra 48% com 2 GB e 24% com 1 GB) e o que segura a vazão no topo também é a CPU. Ou seja, quando a memória deixa de faltar, o gargalo muda de lugar.
 
 ![galeria_filtros](results/_analysis/galeria_filtros/visao_geral.png)
 
 ### Bolsa Fictícia (disco)
 
-| | 1cpu-2gb | 2cpu-1gb | 2cpu-2gb | 3cpu-3gb |
-|---|---:|---:|---:|---:|
-| vazão com 500 usuários (req/s) | 97 | 94 | 104 | 101 |
-| p95 com 500 usuários | 11,5 s | 12,5 s | 10,9 s | 12,4 s |
-| disco ocupado com 500 usuários | 96% | 93% | 96% | 92% |
-| iowait com 500 usuários | 66% | 41% | 40% | 26% |
+| | 1cpu-1gb | 1cpu-2gb | 2cpu-1gb | 2cpu-2gb | 3cpu-3gb |
+|---|---:|---:|---:|---:|---:|
+| vazão com 500 usuários (req/s) | 86 | 97 | 94 | 104 | 101 |
+| p95 com 500 usuários | 14,4 s | 11,5 s | 12,5 s | 10,9 s | 12,4 s |
+| disco ocupado com 500 usuários | 97% | 96% | 93% | 96% | 92% |
+| iowait com 500 usuários | 69% | 66% | 41% | 40% | 26% |
 
-A vazão máxima fica entre 94 e 104 req/s em todos os cenários. O disco está ocupado mais de 90% do tempo e o `fsync` do livro-caixa sobe de 5 ms para 8 a 11 ms. Mais CPU ajuda pouco: o iowait cai de 66% para 26%, e o `3cpu-3gb` aguenta melhor com 100 usuários (p95 de 138 ms, contra 2 a 3 s nos outros). Mas com 500 usuários todos os cenários chegam a um p95 de 11 a 12 s. Só um disco mais rápido resolveria isso.
+A vazão máxima fica entre 86 e 104 req/s em todos os cenários. O disco está ocupado mais de 90% do tempo e o `fsync` do livro-caixa sobe de 5 ms para 8 a 14 ms. O `1cpu-1gb` é o pior, mas por pouco. Mais CPU ajuda pouco: o iowait cai de 69% para 26%, e o `3cpu-3gb` aguenta melhor com 100 usuários (p95 de 138 ms, contra 2 a 5 s nos outros). Mas com 500 usuários todos os cenários chegam a um p95 de 11 a 14 s. Só um disco mais rápido resolveria isso.
 
 ![bolsa_ficticia](results/_analysis/bolsa_ficticia/visao_geral.png)
 
 ### Ressalvas
 
-- A coluna de CPU nos gráficos é 100% menos o tempo ocioso, então inclui o tempo em que a CPU fica esperando o disco (iowait). Na bolsa com 1 vCPU, os "98% de CPU" são em grande parte espera de disco. O CSV traz user, system e iowait separados.
+- A coluna de CPU nos gráficos é 100% menos o tempo ocioso, então inclui o tempo em que a CPU fica esperando o disco (iowait). Na bolsa em `1cpu-1gb` com 500 usuários, a CPU aparece com 99%, mas só 23% disso é processamento de verdade (user + system). O resto, 69%, é espera de disco. O CSV traz user, system e iowait separados.
 - O p95 de 60 s da galeria em `2cpu-1gb` é o limite de timeout do k6. A latência real seria maior.
-- Na calibração, com níveis de 15 s, a bolsa chegou a 166 req/s com 200 usuários. Com níveis de 1 minuto, ficou entre 73 e 93. Isso mostra que o disco virtual aguenta um pico curto de escritas melhor do que escrita contínua.
+- Na calibração, com níveis de 15 s, a bolsa chegou a 166 req/s com 200 usuários. Com níveis de 1 minuto, ficou entre 70 e 93. Isso mostra que o disco virtual aguenta um pico curto de escritas melhor do que escrita contínua.
 
 ## Começo rápido
 
