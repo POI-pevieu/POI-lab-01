@@ -154,6 +154,32 @@ curl localhost:8001/health
 
 As três apps funcionam do mesmo jeito. É só trocar a pasta e a porta.
 
+### Rodar com Docker
+
+Cada app tem um `Dockerfile` na sua pasta, e o `docker-compose.yml` na raiz sobe as três juntas, nas mesmas portas e com a mesma configuração dos experimentos:
+
+```bash
+cp .env.example .env               # ajuste DOCKERHUB_USER
+docker compose build               # constrói as três imagens
+docker compose up -d               # sobe em :8124, :8224 e :8324
+docker compose ps                  # os três devem aparecer como (healthy)
+curl localhost:8324/health
+```
+
+Para publicar e fazer o deploy em outra máquina:
+
+```bash
+docker login && docker compose push           # na máquina de build
+docker compose pull && docker compose up -d   # na VM (precisa só do docker-compose.yml e do .env)
+```
+
+Alguns detalhes:
+
+- As imagens partem de `python:3.12-slim` (glibc, por causa do `malloc_trim` da galeria) e rodam com um usuário sem privilégios.
+- A bolsa grava o SQLite e o livro-caixa em `/data`, que é o volume `bolsa-dados`. Os dados ficam guardados mesmo quando o container é recriado. Para zerar tudo, use `docker compose down -v`.
+- Com `CACHE_MAX_MB=auto`, a galeria calcula o cache sobre o limite de memória do container (cgroup), quando ele existe. Sem limite, usa a RAM da máquina. Para limitar, descomente o `mem_limit` no compose.
+- O cofre usa `WORKERS=auto`, um worker por vCPU que o container enxerga.
+
 ### Rodar o experimento
 
 A VM é preparada uma vez e, depois, cada cenário é só ajustar vCPU/RAM e rodar o script:
@@ -217,6 +243,7 @@ loadtest/
   metricas_vm.py        confere a VM e exporta as métricas do Prometheus
   analyze.py            tabela e gráficos
 monitoring/             docker compose com Prometheus + Grafana (dashboard pronto)
+docker-compose.yml      deploy das três apps em containers (imagens em apps/*/Dockerfile)
 results/                dados brutos dos experimentos + _analysis/
 ```
 

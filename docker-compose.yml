@@ -1,0 +1,47 @@
+name: poi-apps
+
+x-comum: &comum
+  restart: unless-stopped
+  init: true # repassa sinais e recolhe processos zumbis
+  stop_grace_period: 35s # gunicorn usa graceful_timeout=30
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  cofre_digital:
+    <<: *comum
+    build: ./apps/cofre_digital
+    image: ${DOCKERHUB_USER:-poi}/cofre-digital:${TAG:-latest}
+    ports:
+      - "${COFRE_PORT:-8124}:${COFRE_PORT:-8124}"
+    environment:
+      PORT: ${COFRE_PORT:-8124}
+      WORKERS: ${COFRE_WORKERS:-auto} # auto = um worker por vCPU
+
+  galeria_filtros:
+    <<: *comum
+    build: ./apps/galeria_filtros
+    image: ${DOCKERHUB_USER:-poi}/galeria-filtros:${TAG:-latest}
+    ports:
+      - "${GALERIA_PORT:-8224}:${GALERIA_PORT:-8224}"
+    environment:
+      PORT: ${GALERIA_PORT:-8224}
+      WORKERS: ${GALERIA_WORKERS:-1}
+      CACHE_MAX_MB: ${GALERIA_CACHE_MAX_MB:-auto}
+      CACHE_RAM_FRACTION: ${GALERIA_CACHE_RAM_FRACTION:-0.4}
+
+  bolsa_ficticia:
+    <<: *comum
+    build: ./apps/bolsa_ficticia
+    image: ${DOCKERHUB_USER:-poi}/bolsa-ficticia:${TAG:-latest}
+    ports:
+      - "${BOLSA_PORT:-8324}:${BOLSA_PORT:-8324}"
+    environment:
+      PORT: ${BOLSA_PORT:-8324}
+      WORKERS: ${BOLSA_WORKERS:-4}
+    volumes:
+      - bolsa-dados:/data # SQLite + livro-caixa sobrevivem a recriacao do container
+
+volumes:
+  bolsa-dados:
