@@ -4,7 +4,7 @@
 |---|---|---|
 | WORKERS | 1 | usado no modo CACHE_MAX_MB=auto (divide a fracao de RAM) |
 | CACHE_MAX_MB | 1024 | capacidade do cache por processo em MiB, ou `auto` |
-| CACHE_RAM_FRACTION | 0.5 | com `auto`: capacidade = fracao x RAM total / WORKERS |
+| CACHE_RAM_FRACTION | 0.5 | com `auto`: capacidade = fracao x RAM total / WORKERS (em container, RAM total = limite do cgroup) |
 | CACHE_MAX_ITEMS | (vazio) | limite adicional por numero de itens |
 | MOSAICO_MAX_MB | 512 | tamanho maximo do array do mosaico |
 
@@ -33,6 +33,31 @@ def _workers() -> int:
         return 1
 
 
+_CGROUP_LIMITES = (
+    "/sys/fs/cgroup/memory.max",  # cgroup v2
+    "/sys/fs/cgroup/memory/memory.limit_in_bytes",  # cgroup v1
+)
+
+
+def ram_total() -> int:
+    """RAM disponivel para o processo: a da maquina ou o limite do container, o que for menor.
+
+    Dentro de um container o psutil enxerga a RAM do host inteiro; se o container
+    tiver limite de memoria (cgroup), e esse limite que vale.
+    """
+    total = psutil.virtual_memory().total
+    for caminho in _CGROUP_LIMITES:
+        try:
+            with open(caminho) as f:
+                bruto = f.read().strip()
+        except OSError:
+            continue
+        if bruto.isdigit():  # "max" (v2) = sem limite
+            total = min(total, int(bruto))  # v1 sem limite = numero enorme, o min resolve
+        break
+    return total
+
+
 def _capacidade_bytes() -> tuple[int, str]:
     """CACHE_MAX_MB: numero (MiB) ou 'auto' = CACHE_RAM_FRACTION * RAM total / WORKERS."""
     bruto = os.environ.get("CACHE_MAX_MB", "1024").strip().lower()
@@ -40,7 +65,7 @@ def _capacidade_bytes() -> tuple[int, str]:
         frac = float(os.environ.get("CACHE_RAM_FRACTION", "0.5"))
         if not (0 < frac <= 1):
             raise ValueError("CACHE_RAM_FRACTION deve estar em (0, 1]")
-        total = psutil.virtual_memory().total
+        total = ram_total()
         return int(total * frac / _workers()), f"auto ({frac} da RAM / {_workers()} workers)"
     return int(float(bruto) * MB), "fixo (CACHE_MAX_MB)"
 
